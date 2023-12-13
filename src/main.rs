@@ -42,19 +42,7 @@ fn get_all_matches<'a> (words: Vec<&'a str>, input: &str) -> Vec<&'a str> {
     words.into_iter()
         .filter(|x| {
             let bitmap = word_to_bitmap(x);
-            let mut works = true;
-
-            for i in 0..32 {
-                let bitmap = bitmap & (1 << i);
-                let to_check = to_check & (1 << i);
-
-                if bitmap > to_check {
-                    works = false;
-                    break;
-                }
-            }
-
-            works
+            (!to_check & bitmap) == 0
         })
         .filter(|p| {
             let mut test_counted = counted.clone();
