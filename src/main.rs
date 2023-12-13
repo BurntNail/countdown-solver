@@ -1,8 +1,6 @@
 use std::{collections::HashMap, time::Instant};
 
 fn main() {
-    eprintln!("NB: ignores frequency so you'll have to double check");
-
     let mut input = String::new();
     eprintln!("What letters:");
 
