@@ -1,4 +1,7 @@
-use std::{collections::HashMap, time::Instant};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 fn main() {
     let mut input = String::new();
@@ -9,16 +12,26 @@ fn main() {
         .expect("unable to read in letters");
 
     let input = input.trim();
-    let words = include_str!("words.txt").lines().filter(|x| x.len() <= 9).collect::<Vec<_>>();
+    let words = include_str!("words.txt")
+        .lines()
+        .filter(|x| x.len() <= 9)
+        .collect::<Vec<_>>();
 
-    let start = Instant::now();
-    let worked = get_all_matches(words, input);
-    let time_took = start.elapsed();
+    const NO_RUNS: u32 = 1000;
+    let mut total_times_taken = Duration::default();
+    for _ in 0..NO_RUNS {
+        let start = Instant::now();
+        let worked = get_all_matches(&words, input);
+        black_box(worked);
+
+        total_times_taken += start.elapsed();
+    }
+    let time_took = total_times_taken / NO_RUNS;
 
     eprintln!("Took {time_took:?}");
 
     let mut sorted_by_len: HashMap<usize, Vec<&str>> = HashMap::new();
-    for word in worked {
+    for word in get_all_matches(&words, input) {
         sorted_by_len.entry(word.len()).or_default().push(word);
     }
 
@@ -31,19 +44,17 @@ fn main() {
     }
 }
 
-fn get_all_matches<'a> (words: Vec<&'a str>, input: &str) -> Vec<&'a str> {
+fn get_all_matches<'a>(words: &[&'a str], input: &str) -> Vec<&'a str> {
     let to_check = word_to_bitmap(&input);
 
     let mut counted = HashMap::new();
     for ch in input.chars() {
         *counted.entry(ch).or_insert(0) += 1;
-    }        
+    }
 
-    words.into_iter()
-        .filter(|x| {
-            let bitmap = word_to_bitmap(x);
-            (!to_check & bitmap) == 0
-        })
+    words
+        .into_iter()
+        .filter(|x| (!to_check & word_to_bitmap(x)) == 0)
         .filter(|p| {
             let mut test_counted = counted.clone();
 
@@ -58,7 +69,16 @@ fn get_all_matches<'a> (words: Vec<&'a str>, input: &str) -> Vec<&'a str> {
                 }
             })
         })
+        .map(|p| *p)
         .collect::<Vec<_>>()
+}
+
+pub fn black_box<T>(dummy: T) -> T {
+    unsafe {
+        let ret = std::ptr::read_volatile(&dummy);
+        std::mem::forget(dummy);
+        ret
+    }
 }
 
 fn word_to_bitmap(w: &str) -> u32 {
